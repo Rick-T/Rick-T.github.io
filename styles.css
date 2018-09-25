@@ -12,3 +12,7 @@
 .range {
     width: 66%;
 }
+
+body {
+    overflow-y: hidden;
+}
