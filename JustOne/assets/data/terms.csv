@@ -1,8 +1,6 @@
 Begriff,Kategorie 1
 Darkwing,(Kinder-)Serien
 Magic,Nerd
-Zeppelin,Luft-und Raumfahrt
-Raumfahrt,Luft-und Raumfahrt
 Tolkien,Literatur
 Dune,Literatur
 Verchromt,Spongebob
@@ -96,6 +94,7 @@ Saturn,Allgemein
 Pantomime,Allgemein
 Starbucks,Genussmittel
 Extrem,Allgemein
+Extremität,Allgemein
 Plankton,Spongebob
 Chlorophyll,Allgemein
 Stadion,Allgemein
@@ -112,7 +111,6 @@ Werkstoffprüfer,Beruf
 Übersetzer,Beruf
 Ingenieur,Beruf
 Chemikant,Beruf
-Extremität,Allgemein
 Sprite,Genussmittel
 Techniker,Beruf
 Musiker,Beruf
@@ -165,7 +163,6 @@ Mystik,Allgemein
 Diagramm,Nerd
 Maschen,Allgemein
 Draht,Allgemein
-ISS,Luft-und Raumfahrt
 Schall,Allgemein
 Zustand,Allgemein
 Mimic,Nerd
@@ -198,8 +195,8 @@ Wissen,Allgemein
 Koralle,Spongebob
 Eugene,Spongebob
 Formel,Allgemein
-Explosion,Allgemein
 Wende,Allgemein
+Explosion,Allgemein
 Stecker,Allgemein
 Friedrich,Allgemein
 Rippe,Allgemein
@@ -269,7 +266,12 @@ Zirkus,Allgemein
 Fenster,Allgemein
 Tandem,Allgemein
 Citymonkey,Allgemein
+Propeller,Allgemein
+Penis,Allgemein
 Element,Nerd
+Musical,Allgemein
+Essen (Stadt),Allgemein
+Apple,Allgemein
 Stromberg,TV
 Kombucha,Genussmittel
 Nintendo,Allgemein
@@ -282,7 +284,7 @@ Archäologie, Beruf
 Aufmerksamkeit,Allgemein
 Mühle,Allgemein
 Teleskop,Allgemein
-Kaktus Allgemein
+Kaktus,Allgemein
 Pyramide,Allgemein
 Buch,Allgemein 
 Kerze,Allgemein,
@@ -314,9 +316,8 @@ Stalin,Allgemein
 Faschismus,Allgemein
 Cider,Genussmittel
 Kumpir,Genussmittel
-LTB,(Kinder-)Serien
-EMP,Allgemein
 Festplatte,Nerd
+Generator,Nerd
 Kennzeichen,Allgemein
 Babysitter,Allgemein
 Radkappe,Allgemein
@@ -339,13 +340,17 @@ Meerrettich,Spongebob
 Miesmuschel,Spongebob
 Eintopf,Genussmittel
 Jogginghose,Allgemein
-Aluhut,Allgemein
 Jahrhundert,Allgemein
 Rumpelstilzchen,Literatur
 Reiseagentur,Allgemein
 Frittierfett,Allgemein
-Achterbahn,Allgemein
+Zeppelin,Luft-und Raumfahrt
 Seepferdchen,Spongebob
+Raumfahrt,Luft-und Raumfahrt
 Weltkarte,Geographie
-Vagina,Allgemein
-Koriander,Genussmittel
+Aluhut,Allgemein
+Achterbahn,Allgemein
+EMP,Allgemein
+LTB,(Kinder-)Serien
+ISS,Luft-und Raumfahrt
+Nuss,Genussmittel
