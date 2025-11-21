@@ -1,0 +1,314 @@
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background-color: #1a1a1a;
+    font-family: 'Arial', sans-serif;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+    gap: 2rem;
+}
+
+header {
+    text-align: center;
+}
+
+header h1 {
+    font-size: 3rem;
+    font-weight: 200;
+    letter-spacing: 0.5rem;
+    text-transform: uppercase;
+    margin: 0;
+    background: linear-gradient(to right, #fff, #a5b4fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.settings-panel {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    padding: 1.5rem;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    max-width: 800px;
+}
+
+.settings-panel.hidden {
+    display: none;
+}
+
+.game-grid {
+    display: grid;
+    gap: 1rem;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    perspective: 1000px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.game-grid.hidden {
+    display: none;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+        gap: 1rem;
+    }
+
+    header h1 {
+        font-size: 2rem;
+        letter-spacing: 0.3rem;
+    }
+
+    .settings-panel {
+        padding: 1rem;
+        gap: 1rem;
+        max-width: 100%;
+    }
+
+    .game-grid {
+        gap: 0.5rem;
+        padding: 1rem;
+        max-width: 100%;
+    }
+
+    .card {
+        width: 60px;
+        height: 60px;
+    }
+
+    .selector-btn {
+        padding: 0.25rem 0.6rem;
+        font-size: 0.75rem;
+    }
+
+    .play-button {
+        padding: 0.8rem 2rem;
+        font-size: 1rem;
+    }
+
+    .congrats-message {
+        padding: 2rem;
+        min-width: 300px;
+    }
+
+    .congrats-message h2 {
+        font-size: 2.5rem;
+    }
+
+    .congrats-message p {
+        font-size: 1.2rem;
+    }
+}
+
+.play-button {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    border: none;
+    color: white;
+    padding: 1rem 3rem;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
+}
+
+.play-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(118, 75, 162, 0.6);
+}
+
+.play-button:active {
+    transform: translateY(0);
+}
+
+.play-button.hidden {
+    display: none;
+}
+
+.selector-group {
+    margin-bottom: 0.8rem;
+}
+
+.selector-group:last-child {
+    margin-bottom: 0;
+}
+
+.selector-group label {
+    display: block;
+    color: #ffffff;
+    font-size: 0.8rem;
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+.button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.selector-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #e0e0e0;
+    padding: 0.3rem 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--font-main);
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.selector-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #fff;
+}
+
+.selector-btn.active {
+    background: var(--primary-gradient);
+    border-color: transparent;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(118, 75, 162, 0.3);
+}
+
+
+.card {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(145deg, #2a2a2a, #333);
+    border-radius: 12px;
+    box-shadow: 5px 5px 10px #151515, -5px -5px 10px #3f3f3f;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.card:active {
+    transform: scale(0.95);
+}
+
+.card.selected {
+    border-color: #ffd700;
+    /* Yellow */
+    box-shadow: 0 0 15px #ffd700;
+}
+
+.card.matched {
+    border-color: #00ff88;
+    /* Green */
+    box-shadow: 0 0 15px #00ff88;
+    pointer-events: none;
+}
+
+.card.error {
+    border-color: #ff0055;
+    /* Red */
+    box-shadow: 0 0 15px #ff0055;
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    50% {
+        transform: translateX(5px);
+    }
+
+    75% {
+        transform: translateX(-5px);
+    }
+
+    100% {
+        transform: translateX(0);
+    }
+}
+
+.congrats-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(10, 10, 15, 0.98);
+    padding: 4rem;
+    border-radius: 30px;
+    text-align: center;
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 80px rgba(118, 75, 162, 0.8), inset 0 0 30px rgba(255, 215, 0, 0.1);
+    z-index: 100;
+    animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    min-width: 400px;
+}
+
+.congrats-message h2 {
+    font-size: 3.5rem;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    letter-spacing: -1px;
+}
+
+.congrats-message p {
+    font-size: 1.5rem;
+    color: #e0e0e0;
+    font-weight: 300;
+}
+
+.congrats-message .hint {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 400;
+}
+
+.congrats-message.hidden {
+    display: none;
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
