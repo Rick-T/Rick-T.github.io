@@ -3,7 +3,13 @@ const rootSelector = document.getElementById('rootSelector');
 const qualitySelector = document.getElementById('qualitySelector');
 const waveformSelector = document.getElementById('waveformSelector');
 const playButton = document.getElementById('playButton');
-const settingsPanel = document.querySelector('.settings-panel');
+const wizardContainer = document.querySelector('.wizard-container');
+const wizardBackBtn = document.getElementById('wizardBack');
+const wizardNextBtn = document.getElementById('wizardNext');
+
+// Wizard state
+let currentWizardStep = 1;
+const totalWizardSteps = 4;
 
 // Hide game grid initially
 gameGrid.classList.add('hidden');
@@ -109,8 +115,17 @@ const AudioController = {
         oscillator.connect(noteGain);
         noteGain.connect(this.masterGain);
 
+        // Adjust volume based on waveform to normalize perceived loudness
+        const waveformGainMultiplier = {
+            'sine': 1.0,
+            'triangle': 1.0,
+            'sawtooth': 0.5,  // Sawtooth is much louder due to harmonics
+            'square': 0.5     // Square is also louder
+        };
+        const adjustedVolume = volume * (waveformGainMultiplier[type] || 1.0);
+
         // Envelope
-        noteGain.gain.setValueAtTime(volume, start);
+        noteGain.gain.setValueAtTime(adjustedVolume, start);
         noteGain.gain.exponentialRampToValueAtTime(0.001, start + duration);
 
         oscillator.start(start);
@@ -215,14 +230,13 @@ function initSelectors() {
     NOTES.forEach(note => {
         const btn = document.createElement('button');
         btn.textContent = note;
-        btn.classList.add('selector-btn');
+        btn.classList.add('wizard-option');
         if (note === currentRoot) btn.classList.add('active');
 
         btn.addEventListener('click', () => {
-            document.querySelectorAll('#rootSelector .selector-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#rootSelector .wizard-option').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentRoot = note;
-            resetGame();
         });
 
         rootSelector.appendChild(btn);
@@ -238,45 +252,17 @@ function initSelectors() {
     Object.keys(SCALES).forEach(quality => {
         const btn = document.createElement('button');
         btn.textContent = quality;
-        btn.classList.add('selector-btn');
+        btn.classList.add('wizard-option');
         if (quality === currentQuality) btn.classList.add('active');
 
         btn.addEventListener('click', () => {
-            document.querySelectorAll('#qualitySelector .selector-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#qualitySelector .wizard-option').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentQuality = quality;
-            resetGame();
         });
 
         qualitySelector.appendChild(btn);
     });
-
-    // Grid Size
-    const gridBtns = document.querySelectorAll('#gridSelector .selector-btn');
-    if (gridBtns.length === 0) {
-        console.error('Grid selector buttons not found!');
-    }
-    gridBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('#gridSelector .selector-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentGridSize = parseInt(btn.dataset.size);
-            resetGame();
-        });
-    });
-
-    // Game Mode
-    const modeBtns = document.querySelectorAll('#modeSelector .selector-btn');
-    if (modeBtns.length > 0) {
-        modeBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('#modeSelector .selector-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentGameMode = btn.dataset.mode;
-                resetGame();
-            });
-        });
-    }
 
     if (!waveformSelector) {
         console.error('Waveform selector element not found!');
@@ -285,22 +271,71 @@ function initSelectors() {
     waveformSelector.innerHTML = ''; // Clear existing content
 
     // Waveforms
-    ['sawtooth', 'sine', 'square', 'triangle'].forEach(wave => {
+    const waveforms = [
+        { value: 'sawtooth', label: 'Sawtooth', desc: 'Bright, rich harmonics' },
+        { value: 'sine', label: 'Sine', desc: 'Pure, smooth tone' },
+        { value: 'square', label: 'Square', desc: 'Hollow, clarinet-like' },
+        { value: 'triangle', label: 'Triangle', desc: 'Soft, flute-like' }
+    ];
+
+    waveforms.forEach(wave => {
         const btn = document.createElement('button');
-        btn.textContent = wave.charAt(0).toUpperCase() + wave.slice(1);
-        btn.classList.add('selector-btn');
-        if (wave === currentWaveform) btn.classList.add('active');
+        btn.classList.add('wizard-option');
+        if (wave.value === currentWaveform) btn.classList.add('active');
+
+        const title = document.createElement('span');
+        title.classList.add('option-title');
+        title.textContent = wave.label;
+
+        const desc = document.createElement('span');
+        desc.classList.add('option-desc');
+        desc.textContent = wave.desc;
+
+        btn.appendChild(title);
+        btn.appendChild(desc);
 
         btn.addEventListener('click', () => {
-            document.querySelectorAll('#waveformSelector .selector-btn').forEach(b => b.classList.remove('active'));
+            AudioController.init();
+            document.querySelectorAll('#waveformSelector .wizard-option').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            currentWaveform = wave;
-            // No need to reset game for waveform change, just future tones will change
+            currentWaveform = wave.value;
+
+            // Play preview sound based on mode
+            playWaveformPreview();
         });
 
         waveformSelector.appendChild(btn);
     });
 }
+
+function playWaveformPreview() {
+    const rootIndex = NOTES.indexOf(currentRoot);
+    const rootFreq = BASE_FREQ * Math.pow(2, rootIndex / 12);
+
+    if (currentGameMode === 'match') {
+        // Play single root note
+        AudioController.playTone(rootFreq);
+    } else if (currentGameMode === 'interval') {
+        // Play interval as a chord (root + perfect fifth)
+        const intervals = SCALES[currentQuality];
+        const fifthSemitones = intervals[4]; // Perfect fifth is usually the 5th note
+        const secondFreq = rootFreq * Math.pow(2, fifthSemitones / 12);
+        AudioController.playChord([rootFreq, secondFreq]);
+    } else if (currentGameMode === 'triad') {
+        // Build triad from selected scale (root, 3rd, 5th scale degrees)
+        const scaleIntervals = SCALES[currentQuality];
+        const triadSemitones = [0, scaleIntervals[2], scaleIntervals[4]]; // 1st, 3rd, 5th degrees
+        const chordFreqs = triadSemitones.map(semitones => rootFreq * Math.pow(2, semitones / 12));
+        AudioController.playChord(chordFreqs);
+    } else if (currentGameMode === 'jazz') {
+        // Build 7th chord from selected scale (root, 3rd, 5th, 7th scale degrees)
+        const scaleIntervals = SCALES[currentQuality];
+        const seventhSemitones = [0, scaleIntervals[2], scaleIntervals[4], scaleIntervals[6]]; // 1st, 3rd, 5th, 7th degrees
+        const chordFreqs = seventhSemitones.map(semitones => rootFreq * Math.pow(2, semitones / 12));
+        AudioController.playChord(chordFreqs);
+    }
+}
+
 
 function generateIntervalPairs(count) {
     const rootIndex = NOTES.indexOf(currentRoot);
@@ -478,14 +513,20 @@ const CHORD_TYPES = {
         { name: 'Major', intervals: [0, 4, 7] },
         { name: 'Minor', intervals: [0, 3, 7] },
         { name: 'Diminished', intervals: [0, 3, 6] },
-        { name: 'Augmented', intervals: [0, 4, 8] }
+        { name: 'Augmented', intervals: [0, 4, 8] },
+        { name: 'Sus2', intervals: [0, 2, 7] },
+        { name: 'Sus4', intervals: [0, 5, 7] }
     ],
     'jazz': [
         { name: 'Maj7', intervals: [0, 4, 7, 11] },
         { name: 'min7', intervals: [0, 3, 7, 10] },
         { name: 'Dom7', intervals: [0, 4, 7, 10] },
         { name: 'min7b5', intervals: [0, 3, 6, 10] },
-        { name: 'dim7', intervals: [0, 3, 6, 9] }
+        { name: 'dim7', intervals: [0, 3, 6, 9] },
+        { name: '7sus4', intervals: [0, 5, 7, 10] },
+        { name: '7sus2', intervals: [0, 2, 7, 10] },
+        { name: 'Maj7sus4', intervals: [0, 5, 7, 11] },
+        { name: 'Maj7sus2', intervals: [0, 2, 7, 11] }
     ]
 };
 
@@ -493,7 +534,7 @@ const MODE_DESCRIPTIONS = {
     'match': 'Match pairs of identical tones to clear the board.',
     'interval': 'Match a sequence of notes to its corresponding harmonic interval.',
     'triad': 'Match a sequence of notes to its corresponding triad chord.',
-    'jazz': 'Match a sequence of notes to its corresponding 7th chord.'
+    'jazz': 'Match a sequence of notes to its corresponding 7th or suspended chord.'
 };
 
 function updateDescriptions() {
@@ -505,18 +546,20 @@ function updateDescriptions() {
 // Play button handler
 playButton.addEventListener('click', () => {
     AudioController.init();
-    settingsPanel.classList.add('hidden');
-    playButton.classList.add('hidden');
+    wizardContainer.classList.add('hidden');
 
     // Toggle subtitles
     appSubtitle.classList.add('hidden');
     gameSubtitle.classList.remove('hidden');
 
-    // Show Scale Display
-    if (currentScaleDisplay) {
+    // Show Scale Display for Match mode
+    if (currentScaleDisplay && currentGameMode === 'match') {
         currentScaleDisplay.textContent = `${currentRoot} ${currentQuality}`;
         currentScaleDisplay.classList.remove('hidden');
     }
+
+    // Generate cards for the game
+    generateGameCards();
 
     if (currentGameMode === 'match') {
         gameGrid.classList.remove('hidden');
@@ -540,17 +583,24 @@ function getChordName(intervals) {
         if (third === 3 && fifth === 7) return 'min';
         if (third === 3 && fifth === 6) return 'dim';
         if (third === 4 && fifth === 8) return 'Aug';
+        if (third === 2 && fifth === 7) return 'sus2';
+        if (third === 5 && fifth === 7) return 'sus4';
         // Fallback
         return '';
     } else {
         // 7ths
         if (third === 4 && fifth === 7 && seventh === 11) return 'Maj7';
         if (third === 3 && fifth === 7 && seventh === 10) return 'min7';
-        if (third === 4 && fifth === 7 && seventh === 10) return 'Dom7';
+        if (third === 4 && fifth === 7 && seventh === 10) return '7';
         if (third === 3 && fifth === 6 && seventh === 10) return 'min7b5'; // Half-dim
         if (third === 3 && fifth === 6 && seventh === 9) return 'dim7';
         if (third === 3 && fifth === 7 && seventh === 11) return 'minMaj7';
-        return '7th';
+        if (third === 3 && fifth === 7 && seventh === 11) return 'minMaj7';
+        if (third === 5 && fifth === 7 && seventh === 10) return '7sus4';
+        if (third === 2 && fifth === 7 && seventh === 10) return '7sus2';
+        if (third === 5 && fifth === 7 && seventh === 11) return 'Maj7sus4';
+        if (third === 2 && fifth === 7 && seventh === 11) return 'Maj7sus2';
+        return '7';
     }
 }
 
@@ -587,8 +637,12 @@ function generateChordPairs(count, mode) {
         // 7th: degree, degree+2, degree+4, degree+6
 
         const indices = mode === 'triad'
-            ? [0, 2, 4]
-            : [0, 2, 4, 6];
+            ? (allowSuspended && Math.random() > 0.6
+                ? (Math.random() > 0.5 ? [0, 1, 4] : [0, 3, 4]) // sus2 or sus4
+                : [0, 2, 4]) // Normal triad
+            : (allowSuspended && Math.random() > 0.5
+                ? (Math.random() > 0.5 ? [0, 1, 4, 6] : [0, 3, 4, 6]) // 7sus2 or 7sus4
+                : [0, 2, 4, 6]); // Normal 7th
 
         let chordNotes = [];
         const chordIntervals = []; // To determine quality
@@ -623,7 +677,7 @@ function generateChordPairs(count, mode) {
         const absRootIndex = rootIndex + rootSemitone + (octaveShift * 12);
         const noteName = NOTES[absRootIndex % 12];
         const quality = getChordName(chordIntervals);
-        let label = `${noteName} ${quality}`;
+        let label = `${noteName}${quality}`;
 
         // Inversions Logic
         if (allowInversions) {
@@ -692,33 +746,11 @@ function generateChordPairs(count, mode) {
     return pairs;
 }
 
-function resetGame() {
-    if (!congratsMessage.classList.contains('hidden')) {
-        congratsMessage.classList.add('hidden');
-    }
-    matchedPairs = 0;
-
-    // Update descriptions based on current mode
-    updateDescriptions();
-
+function generateGameCards() {
     // Clear all grids
     gameGrid.innerHTML = '';
     sequenceGrid.innerHTML = '';
     chordGrid.innerHTML = '';
-
-    // Hide game grids and show settings/play button
-    gameGrid.classList.add('hidden');
-    intervalContainer.classList.add('hidden');
-    settingsPanel.classList.remove('hidden');
-    playButton.classList.remove('hidden');
-
-    // Reset subtitles
-    appSubtitle.classList.remove('hidden');
-    gameSubtitle.classList.add('hidden');
-
-    if (currentScaleDisplay) {
-        currentScaleDisplay.classList.add('hidden');
-    }
 
     // Update Grid Layout
     let columns = 4;
@@ -734,8 +766,6 @@ function resetGame() {
 
     if (currentGameMode === 'match') {
         const scaleData = generateScaleFrequencies(pairsNeeded);
-        // Create pairs for match mode
-        // scaleData is now [{freq, label}, ...]
         const cardObjects = scaleData.map(item => ({ id: item.freq, type: 'tone', data: item.freq, label: item.label }));
         gameTones = shuffle([...cardObjects, ...cardObjects]); // Duplicate for pairs
         generateCards(gameGrid, gameTones);
@@ -754,6 +784,32 @@ function resetGame() {
 
         generateCards(sequenceGrid, sequences);
         generateCards(chordGrid, chords);
+    }
+}
+
+function resetGame() {
+    if (!congratsMessage.classList.contains('hidden')) {
+        congratsMessage.classList.add('hidden');
+    }
+    matchedPairs = 0;
+
+    // Update descriptions based on current mode
+    updateDescriptions();
+
+    // Hide game grids and show wizard
+    gameGrid.classList.add('hidden');
+    intervalContainer.classList.add('hidden');
+    wizardContainer.classList.remove('hidden');
+
+    // Reset wizard to step 1
+    updateWizardStep(1);
+
+    // Reset subtitles
+    appSubtitle.classList.remove('hidden');
+    gameSubtitle.classList.add('hidden');
+
+    if (currentScaleDisplay) {
+        currentScaleDisplay.classList.add('hidden');
     }
 }
 
@@ -786,12 +842,142 @@ let allowInversions = false;
 if (inversionsCheckbox) {
     inversionsCheckbox.addEventListener('change', (e) => {
         allowInversions = e.target.checked;
-        resetGame();
     });
 }
 
+// Suspended Checkbox
+const susCheckbox = document.getElementById('susCheckbox');
+let allowSuspended = false;
+
+if (susCheckbox) {
+    susCheckbox.addEventListener('change', (e) => {
+        allowSuspended = e.target.checked;
+    });
+}
+
+// Wizard Navigation
+function updateWizardStep(step) {
+    currentWizardStep = step;
+
+    // Update progress indicators
+    document.querySelectorAll('.progress-step').forEach((el, index) => {
+        const stepNum = index + 1;
+        el.classList.remove('active', 'completed');
+        if (stepNum < currentWizardStep) {
+            el.classList.add('completed');
+        } else if (stepNum === currentWizardStep) {
+            el.classList.add('active');
+        }
+    });
+
+    // Update step visibility
+    document.querySelectorAll('.wizard-step').forEach((el) => {
+        el.classList.remove('active');
+        if (parseInt(el.dataset.step) === currentWizardStep) {
+            el.classList.add('active');
+        }
+    });
+
+    // Update navigation buttons
+    wizardBackBtn.disabled = currentWizardStep === 1;
+
+    if (currentWizardStep === totalWizardSteps) {
+        wizardNextBtn.classList.add('hidden');
+        playButton.classList.remove('hidden');
+    } else {
+        wizardNextBtn.classList.remove('hidden');
+        playButton.classList.add('hidden');
+    }
+
+
+    // Show/hide inversions checkbox based on mode
+    const inversionsContainer = document.getElementById('inversionsContainer');
+    if (inversionsContainer) {
+        if (currentGameMode === 'match') {
+            inversionsContainer.classList.add('hidden');
+        } else {
+            inversionsContainer.classList.remove('hidden');
+        }
+    }
+
+
+    // Hide step 2 (Scale) for Intervals mode
+    if (currentGameMode === 'interval' && currentWizardStep === 2) {
+        // Skip to next step
+        updateWizardStep(3);
+        return;
+    }
+}
+
+function goToNextStep() {
+    if (currentWizardStep < totalWizardSteps) {
+        // Skip scale step for Intervals mode
+        if (currentWizardStep === 1 && currentGameMode === 'interval') {
+            updateWizardStep(3);
+        } else {
+            updateWizardStep(currentWizardStep + 1);
+        }
+    }
+}
+
+function goToPreviousStep() {
+    if (currentWizardStep > 1) {
+        // Skip scale step for Intervals mode when going back
+        if (currentWizardStep === 3 && currentGameMode === 'interval') {
+            updateWizardStep(1);
+        } else {
+            updateWizardStep(currentWizardStep - 1);
+        }
+    }
+}
+
+// Wizard button event listeners
+if (wizardNextBtn) {
+    wizardNextBtn.addEventListener('click', goToNextStep);
+}
+
+if (wizardBackBtn) {
+    wizardBackBtn.addEventListener('click', goToPreviousStep);
+}
+
+// Update mode selector to use wizard-option class
+const modeButtons = document.querySelectorAll('#modeSelector .wizard-option');
+modeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        modeButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentGameMode = btn.dataset.mode;
+
+        // Update inversions visibility when mode changes
+        const inversionsContainer = document.getElementById('inversionsContainer');
+        if (inversionsContainer) {
+            if (currentGameMode === 'match') {
+                inversionsContainer.classList.add('hidden');
+            } else {
+                inversionsContainer.classList.remove('hidden');
+            }
+        }
+    });
+});
+
+// Update grid selector to use wizard-option class
+const gridButtons = document.querySelectorAll('#gridSelector .wizard-option');
+gridButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        gridButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentGridSize = parseInt(btn.dataset.size);
+    });
+});
+
 // Initialization
 initSelectors();
+
+// Hide inversions checkbox for Match mode on page load
+const inversionsContainer = document.getElementById('inversionsContainer');
+if (inversionsContainer && currentGameMode === 'match') {
+    inversionsContainer.classList.add('hidden');
+}
 
 // Prepare game but don't show it yet
 resetGame();
